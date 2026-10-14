@@ -3,7 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Maria &amp; Aleksandar – Hochzeit</title>
+<script>
+  /* =====================================================================
+     EINSTELLUNGEN – nur diese zwei Werte anpassen
+     RSVP_URL    : Web-App-URL aus Google Apps Script (endet auf /exec)
+     ACCESS_CODE : Zugangscode für die Seite, z. B. "belvoir27".
+                   Leer lassen ("") = Seite ohne Code erreichbar.
+     ===================================================================== */
+  const CONFIG = {
+    RSVP_URL: "https://script.google.com/macros/s/AKfycbyTBNfaJTKVu0W4xzjPMUGm0WLT6ZTUUk9b2MAX0NclDgEKwLmwCxg48eubSQq0Elb-/exec",
+    ACCESS_CODE: "Love2027"
+  };
+
+  // Zugangscode prüfen (aus Link ?code=… oder bereits früher eingegeben)
+  (function () {
+    if (!CONFIG.ACCESS_CODE) return;
+    const norm = s => String(s || "").trim().toLowerCase();
+    const code = norm(CONFIG.ACCESS_CODE);
+    let ok = false;
+    try {
+      if (norm(new URLSearchParams(location.search).get("code")) === code) ok = true;
+    } catch (e) {}
+    try {
+      if (ok) localStorage.setItem("wedding_access", code);
+      else if (localStorage.getItem("wedding_access") === code) ok = true;
+    } catch (e) {}
+    if (!ok) document.documentElement.classList.add("locked");
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Great+Vibes&family=Jost:wght@300;400;500&family=Noto+Sans+Syriac:wght@400;500;600&display=swap" rel="stylesheet">
@@ -157,6 +186,24 @@
   .thanks { display: none; text-align: center; max-width: 520px; margin: 0 auto; padding: 3rem 2rem; border: 1px solid var(--line); background: var(--paper); }
   .thanks .script { font-family: var(--script); font-size: 3rem; color: var(--gold); }
   .deadline { text-align: center; color: var(--muted); margin-top: -2rem; margin-bottom: 2.5rem; }
+  #attend-details { display: grid; gap: 1.3rem; }
+  .hp { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; opacity: 0; pointer-events: none; }
+  form { position: relative; }
+  .form-error { display: none; text-align: center; color: #a5483a; font-size: .95rem; }
+  .btn[disabled] { opacity: .6; cursor: wait; }
+
+  /* ---------- Zugangscode ---------- */
+  .gate { display: none; min-height: 100vh; place-items: center; padding: 1.5rem; text-align: center; }
+  html.locked .gate { display: grid; }
+  html.locked body > :not(.gate) { display: none !important; }
+  .gate-box { max-width: 420px; width: 100%; }
+  .gate .names { font-size: clamp(2.8rem, 10vw, 4.5rem); }
+  .gate p { color: var(--muted); margin: 1.2rem 0 1.5rem; }
+  .gate form { gap: 0; }
+  .gate input { text-align: center; letter-spacing: .1em; }
+  .gate .btn { margin-top: 1.2rem; }
+  .gate-error { color: #a5483a; font-size: .9rem; margin-top: .8rem; min-height: 1.4em; }
+  .gate .lang-switch { justify-content: center; border: 0; padding: 0; margin-top: 2rem; }
 
   /* ---------- FAQ ---------- */
   details { border-bottom: 1px solid var(--line); padding: 1.2rem 0; max-width: 700px; margin: 0 auto; }
@@ -192,6 +239,24 @@
 </style>
 </head>
 <body>
+
+<!-- ============ ZUGANGSCODE (nur aktiv, wenn ACCESS_CODE gesetzt ist) ============ -->
+<div class="gate" id="gate">
+  <div class="gate-box">
+    <div class="names">Maria <span class="amp">&amp;</span> Aleksandar</div>
+    <p data-i18n="gate_text"></p>
+    <form id="gate-form">
+      <input id="gate-code" autocomplete="off" autocapitalize="off" aria-label="Code" dir="ltr">
+      <div><button class="btn solid" type="submit" data-i18n="gate_btn"></button></div>
+      <div class="gate-error" id="gate-error" aria-live="polite"></div>
+    </form>
+    <div class="lang-switch" role="group" aria-label="Sprache / Језик">
+      <button type="button" data-lang="de">DE</button>
+      <button type="button" data-lang="sr">СР</button>
+      <button type="button" data-lang="syr">ܣܘܪ</button>
+    </div>
+  </div>
+</div>
 
 <nav>
   <a href="#tag" data-i18n="nav_day"></a>
@@ -317,25 +382,46 @@
         </div>
       </div>
 
-      <div class="row">
-        <div>
-          <label for="personen" data-i18n="f_persons"></label>
-          <select id="personen" name="personen"><option>1</option><option>2</option></select>
-          <p class="hint" data-i18n="f_persons_hint"></p>
+      <div id="attend-details">
+        <div class="row">
+          <div>
+            <label for="personen" data-i18n="f_persons"></label>
+            <select id="personen" name="personen"><option>1</option><option>2</option></select>
+            <p class="hint" data-i18n="f_persons_hint"></p>
+          </div>
+          <div>
+            <label for="menu" data-i18n="f_menu"></label>
+            <select id="menu" name="menu">
+              <option value="Fleisch" data-i18n="m_meat"></option>
+              <option value="Fisch" data-i18n="m_fish"></option>
+              <option value="Vegetarisch" data-i18n="m_veg"></option>
+              <option value="Vegan" data-i18n="m_vegan"></option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label for="menu" data-i18n="f_menu"></label>
-          <select id="menu" name="menu">
-            <option value="fleisch" data-i18n="m_meat"></option>
-            <option value="fisch" data-i18n="m_fish"></option>
-            <option value="vegetarisch" data-i18n="m_veg"></option>
-            <option value="vegan" data-i18n="m_vegan"></option>
-          </select>
+
+        <div class="row" id="person2" style="display:none">
+          <div><label for="name2" data-i18n="f_name2"></label><input id="name2" name="name2"></div>
+          <div>
+            <label for="menu2" data-i18n="f_menu2"></label>
+            <select id="menu2" name="menu2">
+              <option value="Fleisch" data-i18n="m_meat"></option>
+              <option value="Fisch" data-i18n="m_fish"></option>
+              <option value="Vegetarisch" data-i18n="m_veg"></option>
+              <option value="Vegan" data-i18n="m_vegan"></option>
+            </select>
+          </div>
         </div>
+
+        <div><label for="allergien" data-i18n="f_allergies"></label><input id="allergien" name="allergien"></div>
       </div>
 
       <div><label for="nachricht" data-i18n="f_msg"></label><textarea id="nachricht" name="nachricht" rows="4"></textarea></div>
 
+      <!-- Spam-Schutz: für Menschen unsichtbar, Bots füllen es aus -->
+      <div class="hp" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+
+      <p class="form-error" id="form-error" aria-live="polite"></p>
       <div class="center"><button type="submit" class="btn solid" data-i18n="f_submit"></button></div>
     </form>
 
@@ -402,7 +488,14 @@ const T = {
     f_yes: "Ich bin gerne dabei", f_no: "Leider nicht möglich",
     f_persons: "Anzahl Personen", f_persons_hint: "Nur die in der Einladung genannten Personen.",
     f_menu: "Menüwunsch", m_meat: "Fleisch", m_fish: "Fisch", m_veg: "Vegetarisch", m_vegan: "Vegan",
+    f_name2: "Vor- und Nachname Begleitperson", f_menu2: "Menüwunsch Begleitperson",
+    f_allergies: "Allergien oder Unverträglichkeiten (optional)",
     f_msg: "Nachricht an das Brautpaar (optional)", f_submit: "Antwort senden",
+    sending: "Wird gesendet …",
+    err_send: "Das hat leider nicht geklappt. Bitte versucht es nochmals oder schreibt uns direkt.",
+    err_config: "Das Formular ist noch nicht verbunden.",
+    gate_text: "Bitte gebt den Code von eurer Einladung ein.",
+    gate_btn: "Weiter", gate_wrong: "Der Code stimmt leider nicht.",
     thanks: "Danke!",
     thanks_yes: n => `Liebe/r ${n}, wir freuen uns riesig, dich am 21. August zu sehen!`,
     thanks_no:  n => `Liebe/r ${n}, schade, dass du nicht dabei sein kannst – wir denken an dich!`,
@@ -452,7 +545,14 @@ const T = {
     f_yes: "Радо долазим", f_no: "Нажалост, не могу",
     f_persons: "Број особа", f_persons_hint: "Само особе наведене у позивници.",
     f_menu: "Избор менија", m_meat: "Месо", m_fish: "Риба", m_veg: "Вегетаријански", m_vegan: "Вегански",
+    f_name2: "Име и презиме пратиоца", f_menu2: "Мени за пратиоца",
+    f_allergies: "Алергије или нетолеранције на храну (опционо)",
     f_msg: "Порука младенцима (опционо)", f_submit: "Пошаљи одговор",
+    sending: "Шаље се …",
+    err_send: "Нажалост, слање није успело. Покушајте поново или нам пишите директно.",
+    err_config: "Формулар још није повезан.",
+    gate_text: "Молимо унесите код са ваше позивнице.",
+    gate_btn: "Даље", gate_wrong: "Код нажалост није тачан.",
     thanks: "Хвала!",
     thanks_yes: n => `${n}, радујемо се што ћемо те видети 21. августа!`,
     thanks_no:  n => `${n}, жао нам је што не можеш да дођеш – мислићемо на тебе!`,
@@ -502,7 +602,14 @@ const T = {
     f_yes: "ܒܚܕܘܬܐ ܐܬܐ ܐܢܐ", f_no: "ܠܐ ܡܨܐ ܐܢܐ ܕܐܬܐ",
     f_persons: "ܡܢܝܢܐ ܕܐܢܫ̈ܐ", f_persons_hint: "ܐܝܟ ܕܟܬܝܒ ܒܩܪܝܬܐ.",
     f_menu: "ܓܒܝܬܐ ܕܡܐܟܘܠܬܐ", m_meat: "ܒܣܪܐ", m_fish: "ܢܘܢܐ", m_veg: "ܕܠܐ ܒܣܪܐ", m_vegan: "ܕܠܐ ܡܕܡ ܕܚܝ̈ܘܬܐ",
+    f_name2: "ܫܡܐ ܕܒܪ ܠܘܝܐ", f_menu2: "ܡܐܟܘܠܬܐ ܕܒܪ ܠܘܝܐ",
+    f_allergies: "ܐܠܪܓܝܐ (ܐܢ ܐܝܬ)",
     f_msg: "ܡܠܬܐ ܠܚܬܢܐ ܘܟܠܬܐ", f_submit: "ܫܕܪ",
+    sending: "ܡܫܬܕܪ …",
+    err_send: "ܠܐ ܐܫܬܕܪ. ܢܣܘ ܬܘܒ.",
+    err_config: "ܛܦܣܐ ܠܐ ܡܚܝܕ ܥܕܟܝܠ.",
+    gate_text: "ܣܝܡܘ ܩܘܕܐ ܕܡܢ ܩܪܝܬܐ ܕܝܠܟܘܢ.",
+    gate_btn: "ܠܩܕܡ", gate_wrong: "ܩܘܕܐ ܠܐ ܫܪܝܪ.",
     thanks: "ܬܘܕܝ!",
     thanks_yes: n => `${n}، ܚܕܝܢܢ ܕܢܚܙܝܟ ܒ‑21 ܒܐܒ!`,
     thanks_no:  n => `${n}، ܟܪܝܐ ܠܢ ܕܠܐ ܡܨܐ ܐܢܬ ܕܬܐܬܐ.`,
@@ -565,16 +672,83 @@ function tick() {
 }
 tick(); setInterval(tick, 1000);
 
-// RSVP (Demo: zeigt nur eine Bestätigung an, sendet nichts)
-document.getElementById("rsvp-form").addEventListener("submit", e => {
+// Zugangscode-Formular
+document.getElementById("gate-form").addEventListener("submit", e => {
   e.preventDefault();
-  const f = e.target;
-  const name = f.vorname.value.trim();
+  const norm = s => String(s || "").trim().toLowerCase();
+  const input = document.getElementById("gate-code");
+  if (norm(input.value) === norm(CONFIG.ACCESS_CODE)) {
+    try { localStorage.setItem("wedding_access", norm(CONFIG.ACCESS_CODE)); } catch (err) {}
+    document.documentElement.classList.remove("locked");
+    window.scrollTo(0, 0);
+  } else {
+    document.getElementById("gate-error").textContent = T[current].gate_wrong;
+    input.select();
+  }
+});
+
+// ---------- Zusage-Formular ----------
+const form = document.getElementById("rsvp-form");
+const details = document.getElementById("attend-details");
+const person2 = document.getElementById("person2");
+const errEl = document.getElementById("form-error");
+
+function updateFormVisibility() {
+  const attends = form.teilnahme.value !== "nein";
+  details.style.display = attends ? "" : "none";
+  const two = attends && form.personen.value === "2";
+  person2.style.display = two ? "" : "none";
+  form.name2.required = two;
+}
+form.addEventListener("change", updateFormVisibility);
+
+function showError(msg) {
+  errEl.textContent = msg;
+  errEl.style.display = "block";
+}
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
   const dict = T[current];
-  document.getElementById("thanks-text").textContent =
-    f.teilnahme.value === "ja" ? dict.thanks_yes(name) : dict.thanks_no(name);
-  f.style.display = "none";
-  document.getElementById("thanks").style.display = "block";
+  const btn = form.querySelector('button[type="submit"]');
+  errEl.style.display = "none";
+
+  if (form.website.value) return;                     // Bot erkannt → nichts senden
+  if (!CONFIG.RSVP_URL) { showError(dict.err_config); return; }
+
+  const ja = form.teilnahme.value === "ja";
+  const two = ja && form.personen.value === "2";
+  const data = new URLSearchParams({
+    vorname:   form.vorname.value.trim(),
+    nachname:  form.nachname.value.trim(),
+    email:     form.email.value.trim(),
+    teilnahme: ja ? "Ja" : "Nein",
+    personen:  ja ? form.personen.value : "0",
+    menu:      ja ? form.menu.value : "",
+    name2:     two ? form.name2.value.trim() : "",
+    menu2:     two ? form.menu2.value : "",
+    allergien: ja ? form.allergien.value.trim() : "",
+    nachricht: form.nachricht.value.trim(),
+    sprache:   current,
+    website:   form.website.value
+  });
+
+  btn.disabled = true;
+  btn.textContent = dict.sending;
+  try {
+    // "no-cors": Google Apps Script nimmt die Daten an; die Antwort ist nicht lesbar,
+    // aber ein Netzwerkfehler würde hier eine Exception auslösen.
+    await fetch(CONFIG.RSVP_URL, { method: "POST", mode: "no-cors", body: data });
+    const name = form.vorname.value.trim();
+    document.getElementById("thanks-text").textContent = ja ? dict.thanks_yes(name) : dict.thanks_no(name);
+    form.style.display = "none";
+    document.getElementById("thanks").style.display = "block";
+  } catch (err) {
+    showError(dict.err_send);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = dict.f_submit;
+  }
 });
 
 // Sanftes Einblenden beim Scrollen
