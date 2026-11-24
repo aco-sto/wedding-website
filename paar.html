@@ -9,17 +9,18 @@
   /* =====================================================================
      EINSTELLUNGEN: nur diese zwei Werte anpassen
      RSVP_URL    : Web-App-URL aus Google Apps Script (endet auf /exec)
-     ACCESS_CODE : Zugangscode für die Seite, z. B. "belvoir27".
+     ACCESS_CODE : Zugangscodes für die Seite, als Liste, z. B. ["love2027", "hochzeit2027"].
+                   Gross-/Kleinschreibung spielt keine Rolle.
                    Leer lassen ("") = Seite ohne Code erreichbar.
      ===================================================================== */
   const CONFIG = {
-    RSVP_URL: "",
-    ACCESS_CODE: "love2027",
+    RSVP_URL: "https://script.google.com/macros/s/AKfycbzTvM7Ym7Wh9hHikxH-CFWjJglEhYES-hJfNZaAyRYlKGu7mqkfxyY1Vdmxta9Oik9PJw/exec",
+    ACCESS_CODE: ["love2027", "wedding2027", "ljubav2027", "svadba2027", "liebe2027", "hochzeit2027"],
     INVITE: "paar"        // Art der Einladung: "einzel" (1 Person), "paar" (bis 2), "familie" (bis 6)
   };
 
   // Zugangscode: wird bei jedem Besuch abgefragt
-  if (CONFIG.ACCESS_CODE) document.documentElement.classList.add("locked");
+  if ([].concat(CONFIG.ACCESS_CODE).filter(Boolean).length) document.documentElement.classList.add("locked");
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -766,6 +767,33 @@ const T = {
 
 // ---------- Art der Einladung: bestimmt nur die mögliche Personenzahl ----------
 const INVITE_MAX = { einzel: 1, paar: 2, familie: 6 }[CONFIG.INVITE] || 2;
+// Einzel-Einladung: persönliche Anrede und Begleitpersonen-Frage
+if (CONFIG.INVITE === "einzel") {
+  Object.assign(T.de, {
+    lead: "Wir wollen uns das Ja-Wort geben und diesen besonderen Tag mit den Menschen feiern, die uns am meisten bedeuten. Wir würden uns von Herzen freuen, wenn du dabei bist.",
+    c_guests_d: "Wir freuen uns sehr, diesen Tag mit dir zu feiern! Die Einladung gilt persönlich für dich.",
+    rsvp_script: "Bist du dabei?",
+    deadline: "Bitte gib uns bis <strong>Ende März 2027</strong> Bescheid.",
+    gate_text: "Bitte gib den Code von deiner Einladung ein.",
+    err_send: "Das hat leider nicht geklappt. Bitte versuch es nochmals oder schreib uns direkt.",
+    q1: "Darf ich eine Begleitung mitbringen?",
+    a1: "Die Einladung gilt persönlich für dich. Wir bitten um Verständnis, dass wir keine weiteren Begleitpersonen einladen können.",
+    a2: "Das grösste Geschenk ist deine Anwesenheit. Wer uns dennoch etwas schenken möchte, darf gerne zu unserer Hochzeitsreise beitragen.",
+    q3: "Darf ich in der Kirche fotografieren?",
+    a3: "Wir bitten dich, während der Trauung auf Fotos zu verzichten. Iva &amp; Marko von Image Studio halten alles fest. Ab dem Apéro darfst du gerne knipsen.",
+    a4: "Schreib uns einfach eine Nachricht auf WhatsApp. Wir melden uns gerne bei dir."
+  });
+  Object.assign(T.sr, {
+    c_guests_d: "Много се радујемо што ћемо овај дан славити са вама! Позивница је лично намењена вама.",
+    q1: "Да ли могу да поведем пратњу?",
+    a1: "Позивница је лично намењена вама. Молимо за разумевање што не можемо да позовемо додатне пратиоце."
+  });
+  Object.assign(T.syr, {
+    c_guests_d: "ܚܕܝܢܢ ܛܒ ܕܢܥܕܥܕ ܝܘܡܐ ܗܢܐ ܥܡܟ! ܩܪܝܬܐ ܗܕܐ ܠܟ ܒܠܚܘܕ ܗܝ.",
+    q1: "ܡܨܐ ܐܢܐ ܕܐܝܬܐ ܒܪ ܠܘܝܐ؟",
+    a1: "ܩܪܝܬܐ ܗܕܐ ܠܟ ܒܠܚܘܕ ܗܝ. ܬܘܕܝ ܥܠ ܦܘܪܫܢܟ."
+  });
+}
 (function () {
   const sel = document.getElementById("personen");
   sel.innerHTML = "";
@@ -830,7 +858,7 @@ document.getElementById("gate-form").addEventListener("submit", e => {
   const norm = s => String(s || "").trim().toLowerCase();
   const input = document.getElementById("gate-code");
   const gate = document.getElementById("gate"), root = document.documentElement;
-  if (norm(input.value) === norm(CONFIG.ACCESS_CODE)) {
+  if ([].concat(CONFIG.ACCESS_CODE).map(norm).filter(Boolean).includes(norm(input.value))) {
     input.blur();
     document.getElementById("gate-error").textContent = "";
     if (!root.classList.contains("fable-js")) {            // ohne Animationen: sofort öffnen
